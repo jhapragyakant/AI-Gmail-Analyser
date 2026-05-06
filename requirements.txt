@@ -1,0 +1,10 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.35
+alembic==1.13.1
+pydantic-settings==2.2.1
+google-api-python-client==2.124.0
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-genai==0.2.0
+python-dotenv==1.0.1
