@@ -20,10 +20,10 @@
 - [x] Test server startup and DB creation
 
 ## Phase 2 — Gmail OAuth2 & Email Fetching
-- [ ] Build `routers/auth.py`
-- [ ] Build `services/gmail_service.py`
-- [ ] Add temporary test endpoint `GET /emails/test-fetch`
-- [ ] Wire up auth router in `main.py`
+- [x] Build `routers/auth.py`
+- [x] Build `services/gmail_service.py`
+- [x] Add temporary test endpoint `GET /emails/test-fetch`
+- [x] Wire up auth router in `main.py`
 
 ## Phase 3 — AI Classifier (Standalone)
 - [ ] Build `services/ai_classifier.py`
