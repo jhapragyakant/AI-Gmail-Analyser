@@ -1,5 +1,6 @@
 """Application configuration using Pydantic Settings."""
 
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 import secrets
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     AI_MODEL_NAME: str = "gemini-2.5-flash"
     CONFIDENCE_THRESHOLD: int = 85
 
-    model_config = SettingsConfigDict(env_file="../.env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=os.path.join(os.path.dirname(__file__), "..", ".env"), env_file_encoding="utf-8")
 
 @lru_cache
 def get_settings():
