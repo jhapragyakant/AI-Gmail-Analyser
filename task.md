@@ -26,10 +26,11 @@
 - [x] Wire up auth router in `main.py`
 
 ## Phase 3 — AI Classifier (Standalone)
-- [ ] Build `services/ai_classifier.py`
-- [ ] Implement `classify_email()`
-- [ ] Implement `determine_classification()` bucketing
-- [ ] Add temporary test endpoint `POST /emails/test-classify`
+- [x] Build `services/ai_classifier.py`
+- [x] Implement `classify_email()`
+- [x] Implement `determine_classification()` bucketing
+- [x] Add temporary test endpoint `POST /emails/test-classify`
+
 
 ## Phase 4 — Full Scan Pipeline
 - [ ] Build `POST /emails/scan`

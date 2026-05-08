@@ -6,7 +6,6 @@ from ..models import User
 from ..services.gmail_service import get_auth_url, get_credentials_from_code, test_fetch_emails
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-emails_router = APIRouter(prefix="/emails", tags=["emails"])
 
 @router.get("/login")
 def login():
@@ -55,30 +54,3 @@ def auth_callback(code: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@emails_router.get("/test-fetch")
-def test_fetch(email: str, db: Session = Depends(get_db)):
-    """Temporary test endpoint to fetch 5 emails for a user."""
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    if not user.gmail_access_token:
-        raise HTTPException(status_code=400, detail="User not authenticated with Gmail")
-        
-    from backend.config import get_settings
-    settings = get_settings()
-        
-    creds_dict = {
-        'token': user.gmail_access_token,
-        'refresh_token': user.gmail_refresh_token,
-        'token_uri': "https://oauth2.googleapis.com/token",
-        'client_id': settings.GOOGLE_CLIENT_ID,
-        'client_secret': settings.GOOGLE_CLIENT_SECRET,
-        'scopes': ['https://www.googleapis.com/auth/gmail.modify']
-    }
-    
-    try:
-        emails = test_fetch_emails(creds_dict)
-        return {"emails": emails}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
