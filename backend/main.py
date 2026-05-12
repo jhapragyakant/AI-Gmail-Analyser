@@ -28,7 +28,9 @@ def read_root():
     return {"message": "AI Gmail Analyser API is running."}
 
 # Include Routers
-from .routers import auth, emails
+from .routers import auth, emails, history
 app.include_router(auth.router)
 app.include_router(emails.router)
+app.include_router(history.router)
+
 

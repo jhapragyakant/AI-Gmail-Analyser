@@ -33,12 +33,13 @@
 
 
 ## Phase 4 — Full Scan Pipeline
-- [ ] Build `POST /emails/scan`
-- [ ] Build `GET /emails/results/{scan_id}`
-- [ ] Build `PATCH /emails/{log_id}/override`
-- [ ] Build `POST /emails/cleanup`
-- [ ] Build `GET /history`
-- [ ] Remove temporary endpoints
+- [x] Build `POST /emails/scan`
+- [x] Build `GET /emails/results/{scan_id}`
+- [x] Build `PATCH /emails/{log_id}/override`
+- [x] Build `POST /emails/cleanup`
+- [x] Build `GET /history`
+- [x] Remove temporary endpoints
+
 
 ## Phase 5 — Frontend Dashboard
 - [ ] 5a: Design System + Shell
