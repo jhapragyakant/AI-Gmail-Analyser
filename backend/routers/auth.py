@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Cookie
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -36,6 +36,8 @@ def auth_callback(code: str, db: Session = Depends(get_db)):
         gmail = build('gmail', 'v1', credentials=creds)
         profile = gmail.users().getProfile(userId='me').execute()
         user_email = profile.get('emailAddress')
+        user_name = profile.get('names', [{}])[0].get('displayName', 'User')
+        user_picture = profile.get('photos', [{}])[0].get('url', '')
         
         if not user_email:
             raise HTTPException(status_code=400, detail="Could not retrieve email address")
@@ -50,7 +52,44 @@ def auth_callback(code: str, db: Session = Depends(get_db)):
         
         db.commit()
         
-        return {"message": "Successfully authenticated", "email": user_email}
+        # In a real app, we would use a proper session/JWT. 
+        # For this demo, we'll use a cookie to "login" the user.
+        response = RedirectResponse(url="/")
+        response.set_cookie(key="user_email", value=user_email, max_age=3600*24)
+        return response
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/status")
+def get_auth_status(db: Session = Depends(get_db), user_email: str = Cookie(None)):
+    """Check if the user is authenticated."""
+    return _get_status_internal(db, user_email)
+
+def _get_status_internal(db: Session, user_email: str):
+    if not user_email:
+        return {"authenticated": False}
+    
+    user = db.query(User).filter(User.email == user_email).first()
+    if not user or not user.gmail_access_token:
+        return {"authenticated": False}
+    
+    return {
+        "authenticated": True,
+        "user": {
+            "email": user.email,
+            "name": user.email.split('@')[0], # Fallback name
+        }
+    }
+
+@router.get("/logout")
+def logout():
+    """Clear the user session."""
+    response = RedirectResponse(url="/")
+    response.delete_cookie("user_email")
+    return response
+
+@router.post("/logout")
+def logout_post():
+    """Clear the user session via POST."""
+    return {"message": "Logged out"}
 

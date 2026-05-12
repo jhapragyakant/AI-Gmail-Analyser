@@ -3,13 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Gmail Analyser</title>
+    <title>AI Gmail Analyser | Smart Email Management</title>
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Lucide Icons for modern UI -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <h1>AI Gmail Analyser Frontend placeholder</h1>
+    <div id="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">A</div>
+                <span class="logo-text">Gmail Analyser</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="scan">
+                    <i data-lucide="mail-search"></i>
+                    <span>Scan Emails</span>
+                </a>
+                <a href="#" class="nav-item" data-view="history">
+                    <i data-lucide="history"></i>
+                    <span>History</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" id="logout-btn">
+                    <i data-lucide="log-out"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <header id="top-bar">
+                <div class="page-title" id="current-view-title">Dashboard</div>
+                <div class="user-profile">
+                    <span id="user-name">User</span>
+                    <div class="avatar" id="user-avatar"></div>
+                </div>
+            </header>
+
+            <div id="view-container" class="container">
+                <!-- Views will be injected here -->
+                <div id="dashboard-view" class="view fade-in">
+                    <div class="card">
+                        <h2>Welcome to AI Gmail Analyser</h2>
+                        <p style="color: var(--text-secondary); margin-top: 1rem;">
+                            Your intelligent companion for managing overflowing inboxes. 
+                            Start by scanning your emails to categorize them into Important, Needs Review, and Unimportant.
+                        </p>
+                        <div style="margin-top: 2rem;">
+                            <button class="btn btn-primary" onclick="app.navigateTo('scan')">
+                                <i data-lucide="play"></i> Start First Scan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Application Scripts -->
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>

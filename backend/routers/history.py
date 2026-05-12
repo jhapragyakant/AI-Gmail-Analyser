@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Cookie
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from backend.database import get_db
 from backend.models import User, ScanHistory, EmailLog
@@ -9,9 +9,12 @@ from backend.schemas import ScanHistoryResponse, EmailLogResponse
 router = APIRouter(prefix="/history", tags=["History"])
 
 @router.get("", response_model=List[ScanHistoryResponse])
-def get_history(email: str, db: Session = Depends(get_db)):
+def get_history(db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
     """List past scans with summary stats for the user."""
-    user = db.query(User).filter(User.email == email).first()
+    if not user_email:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
+    user = db.query(User).filter(User.email == user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -19,9 +22,12 @@ def get_history(email: str, db: Session = Depends(get_db)):
     return scans
 
 @router.get("/{scan_id}", response_model=List[EmailLogResponse])
-def get_history_scan_details(scan_id: int, email: str, db: Session = Depends(get_db)):
+def get_history_scan_details(scan_id: int, db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
     """Full email-by-email log of a specific scan."""
-    user = db.query(User).filter(User.email == email).first()
+    if not user_email:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
+    user = db.query(User).filter(User.email == user_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         

@@ -1,9 +1,14 @@
 """AI Gmail Analyser — FastAPI application entry point."""
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 from .database import engine, Base
 from . import models
+from .routers import auth, emails, history
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -23,14 +28,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def read_root():
-    return {"message": "AI Gmail Analyser API is running."}
-
 # Include Routers
-from .routers import auth, emails, history
 app.include_router(auth.router)
 app.include_router(emails.router)
 app.include_router(history.router)
+
+# Serve Frontend
+
+# Mount the static files (CSS, JS)
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # If the path exists in the static directory, it will be handled by the mount above
+    # But since we mount it at /static, we need to handle the root and other routes for SPA-like behavior
+    file_path = os.path.join(frontend_path, full_path)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(frontend_path, "index.html"))
 
 

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Cookie
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import time
 
 from backend.database import get_db
@@ -13,9 +13,11 @@ from backend.config import get_settings
 router = APIRouter(prefix="/emails", tags=["Emails"])
 
 def get_current_user_creds(email: str, db: Session):
+    if not email:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     user = db.query(User).filter(User.email == email).first()
     if not user or not user.gmail_access_token:
-        raise HTTPException(status_code=400, detail="User not authenticated with Gmail")
+        raise HTTPException(status_code=401, detail="User not authenticated with Gmail")
     
     settings = get_settings()
     return {
@@ -28,8 +30,8 @@ def get_current_user_creds(email: str, db: Session):
     }, user
 
 @router.post("/scan")
-def scan_emails(email: str, db: Session = Depends(get_db)):
-    creds_dict, user = get_current_user_creds(email, db)
+def scan_emails(db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
+    creds_dict, user = get_current_user_creds(user_email, db)
     
     try:
         # Reduced from 50 to 10 to avoid long timeouts and respect free tier rate limits
@@ -140,8 +142,8 @@ def override_classification(log_id: int, override: OverrideRequest, db: Session 
     return {"message": "Classification overridden successfully"}
 
 @router.post("/cleanup")
-def cleanup_emails(scan_id: int, email: str, db: Session = Depends(get_db)):
-    creds_dict, user = get_current_user_creds(email, db)
+def cleanup_emails(scan_id: int, db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
+    creds_dict, user = get_current_user_creds(user_email, db)
     
     scan_record = db.query(ScanHistory).filter(ScanHistory.id == scan_id, ScanHistory.user_id == user.id).first()
     if not scan_record:
