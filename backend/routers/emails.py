@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any
+import time
 
 from backend.database import get_db
 from backend.models import User, ScanHistory, EmailLog
@@ -31,7 +32,8 @@ def scan_emails(email: str, db: Session = Depends(get_db)):
     creds_dict, user = get_current_user_creds(email, db)
     
     try:
-        raw_emails = fetch_unread_emails(creds_dict, max_results=50)
+        # Reduced from 50 to 10 to avoid long timeouts and respect free tier rate limits
+        raw_emails = fetch_unread_emails(creds_dict, max_results=10)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch emails: {e}")
 
@@ -56,6 +58,10 @@ def scan_emails(email: str, db: Session = Depends(get_db)):
             subject=mail['subject'],
             body=mail['body']
         )
+        
+        # Rate Limiter: Sleep for 4 seconds between requests
+        # Gemini free tier allows 15 requests per minute (1 request every 4 seconds)
+        time.sleep(4)
         
         log = EmailLog(
             scan_id=scan_record.id,
