@@ -24,6 +24,14 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=os.path.join(os.path.dirname(__file__), "..", ".env"), env_file_encoding="utf-8")
 
+    @property
+    def get_database_url(self) -> str:
+        """Fix for 'postgres://' vs 'postgresql://' SQLAlchemy requirement."""
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
+
 @lru_cache
 def get_settings():
     return Settings()
