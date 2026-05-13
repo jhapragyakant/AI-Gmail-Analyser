@@ -9,6 +9,10 @@ from backend.services.gmail_service import fetch_unread_emails, trash_email
 from backend.services.ai_classifier import classify_email
 from backend.schemas import ScanResultsResponse, OverrideRequest, EmailLogResponse
 from backend.config import get_settings
+from pydantic import BaseModel
+
+class CleanupRequest(BaseModel):
+    scan_id: int
 
 router = APIRouter(prefix="/emails", tags=["Emails"])
 
@@ -142,8 +146,9 @@ def override_classification(log_id: int, override: OverrideRequest, db: Session 
     return {"message": "Classification overridden successfully"}
 
 @router.post("/cleanup")
-def cleanup_emails(scan_id: int, db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
+def cleanup_emails(request: CleanupRequest, db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
     creds_dict, user = get_current_user_creds(user_email, db)
+    scan_id = request.scan_id
     
     scan_record = db.query(ScanHistory).filter(ScanHistory.id == scan_id, ScanHistory.user_id == user.id).first()
     if not scan_record:

@@ -121,6 +121,8 @@ const app = {
         const viewDiv = document.createElement('div');
         viewDiv.className = 'view fade-in';
         
+        container.appendChild(viewDiv);
+        
         switch(view) {
             case 'dashboard':
                 this.renderDashboard(viewDiv);
@@ -137,8 +139,6 @@ const app = {
             default:
                 viewDiv.innerHTML = '<h2>Page not found</h2>';
         }
-        
-        container.appendChild(viewDiv);
     },
 
     renderDashboard(container) {
@@ -253,8 +253,27 @@ const app = {
         if (progressContainer) progressContainer.style.display = 'none';
         resultsContainer.style.display = 'block';
         
-        const total = results.important.length + results.needs_review.length + results.unimportant.length;
+        const totalUnimportant = results.unimportant.length;
+        const untrashedUnimportant = results.unimportant.filter(e => e.final_action !== 'trashed').length;
         
+        let trashButtonHtml = '';
+        if (totalUnimportant === 0) {
+            trashButtonHtml = `
+                <button id="cleanup-btn" class="btn btn-primary" disabled>
+                    <i data-lucide="trash-2"></i> No Unimportant Emails
+                </button>`;
+        } else if (untrashedUnimportant === 0) {
+            trashButtonHtml = `
+                <button id="cleanup-btn" class="btn btn-primary" disabled style="background: var(--success); border-color: var(--success); opacity: 0.8;">
+                    <i data-lucide="check-circle"></i> Emails Already Trashed
+                </button>`;
+        } else {
+            trashButtonHtml = `
+                <button id="cleanup-btn" class="btn btn-primary">
+                    <i data-lucide="trash-2"></i> Trash ${untrashedUnimportant} Emails
+                </button>`;
+        }
+
         resultsContainer.innerHTML = `
             <div class="fade-in">
                 <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
@@ -275,9 +294,7 @@ const app = {
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0;">Review Results</h3>
-                        <button id="cleanup-btn" class="btn btn-primary" ${results.unimportant.length === 0 ? 'disabled' : ''}>
-                            <i data-lucide="trash-2"></i> Trash ${results.unimportant.length} Emails
-                        </button>
+                        ${trashButtonHtml}
                     </div>
                     
                     <div id="email-list" style="max-height: 500px; overflow-y: auto;">
@@ -288,7 +305,9 @@ const app = {
         `;
 
         const cleanupBtn = resultsContainer.querySelector('#cleanup-btn');
-        cleanupBtn.addEventListener('click', () => this.handleCleanup(results.scan_id));
+        if (cleanupBtn && !cleanupBtn.disabled) {
+            cleanupBtn.addEventListener('click', () => this.handleCleanup(results.scan_id));
+        }
         
         lucide.createIcons();
     },
@@ -308,7 +327,7 @@ const app = {
                 <div style="flex: 1; min-width: 0;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
                         <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${email.sender}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Score: ${Math.round(email.confidence_score * 100)}%</span>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Score: ${Math.round(email.confidence_score)}%</span>
                     </div>
                     <div style="font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${email.subject}</div>
                     <div style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${email.snippet}</div>
@@ -317,9 +336,12 @@ const app = {
                     <button class="btn btn-outline btn-sm" style="padding: 0.4rem;" title="Mark as Important" onclick="app.handleOverride(${email.id}, 'important')">
                         <i data-lucide="star" style="width: 16px; height: 16px;"></i>
                     </button>
-                    <button class="btn btn-outline btn-sm" style="padding: 0.4rem;" title="Mark as Unimportant" onclick="app.handleOverride(${email.id}, 'unimportant')">
-                        <i data-lucide="trash" style="width: 16px; height: 16px;"></i>
-                    </button>
+                    ${email.final_action === 'trashed' 
+                        ? `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 4px;">Deleted</span>`
+                        : `<button class="btn btn-outline btn-sm" style="padding: 0.4rem;" title="Mark as Unimportant" onclick="app.handleOverride(${email.id}, 'unimportant')">
+                               <i data-lucide="trash" style="width: 16px; height: 16px;"></i>
+                           </button>`
+                    }
                 </div>
             </div>
         `).join('');
@@ -385,7 +407,7 @@ const app = {
             history.forEach(item => {
                 const date = new Date(item.scanned_at).toLocaleString();
                 html += `
-                    <div class="card" style="background: rgba(255,255,255,0.03); padding: 1.25rem; cursor: pointer; transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                    <div class="card" style="background: rgba(255,255,255,0.03); padding: 1.25rem; cursor: pointer; transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'" onclick="app.viewHistoryDetail(${item.id})">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
@@ -410,6 +432,29 @@ const app = {
             lucide.createIcons();
         } catch (err) {
             list.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--danger);">Failed to load history.</p>';
+        }
+    },
+
+    async viewHistoryDetail(scanId) {
+        // Navigate to scan view so we can reuse its containers
+        this.navigateTo('scan');
+        
+        const progressContainer = document.getElementById('scan-progress-container');
+        const startBtn = document.getElementById('start-scan-btn');
+        
+        try {
+            startBtn.disabled = true;
+            startBtn.innerHTML = 'Loading scan details...';
+            progressContainer.style.display = 'block';
+            document.getElementById('scan-status-text').textContent = 'Fetching history from server...';
+            
+            const results = await api.getScanResults(scanId);
+            this.showScanResults(results);
+        } catch (err) {
+            ui.showToast('Failed to load scan details: ' + err.message, 'error');
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i data-lucide="play-circle"></i> Run AI Analysis';
+            progressContainer.style.display = 'none';
         }
     },
 
