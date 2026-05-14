@@ -67,7 +67,9 @@ def scan_emails(db: Session = Depends(get_db), user_email: Optional[str] = Cooki
         ai_result = classify_email(
             sender=mail['sender'],
             subject=mail['subject'],
-            body=mail['body']
+            body=mail['body'],
+            model_name=user.ai_model,
+            threshold=user.confidence_threshold
         )
         
         # Rate Limiter: Sleep for 4 seconds between requests

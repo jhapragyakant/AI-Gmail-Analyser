@@ -105,5 +105,13 @@ const api = {
 
     async trashEmail(logId) {
         return this.post(`/emails/${logId}/trash`);
+    },
+
+    async getSettings() {
+        return this.get('/settings');
+    },
+
+    async updateSettings(data) {
+        return this.patch('/settings', data);
     }
 };

@@ -13,6 +13,8 @@ class User(Base):
     gmail_access_token = Column(String, nullable=True)
     gmail_refresh_token = Column(String, nullable=True)
     token_expiry = Column(DateTime(timezone=True), nullable=True)
+    ai_model = Column(String, default="gemini-2.5-flash")
+    confidence_threshold = Column(Integer, default=85)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships

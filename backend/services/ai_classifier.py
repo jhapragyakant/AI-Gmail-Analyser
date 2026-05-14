@@ -26,7 +26,7 @@ def determine_classification(ai_result: dict, threshold: int = 85) -> str:
     else:
         return "needs_review"
 
-def classify_email(sender: str, subject: str, body: str) -> AIClassification:
+def classify_email(sender: str, subject: str, body: str, model_name: str = None, threshold: int = None) -> AIClassification:
     """
     Calls Gemini AI to classify an email.
     """
@@ -78,8 +78,11 @@ Subject: {subject}
 Body (first 2000 chars): {truncated_body}
 """
 
+        target_model = model_name or settings.AI_MODEL_NAME
+        target_threshold = threshold if threshold is not None else settings.CONFIDENCE_THRESHOLD
+
         response = client.models.generate_content(
-            model=settings.AI_MODEL_NAME,
+            model=target_model,
             contents=prompt,
             config={
                 "response_mime_type": "application/json"
@@ -91,7 +94,7 @@ Body (first 2000 chars): {truncated_body}
         ai_json = json.loads(response.text)
         
         # Determine the bucket
-        bucket = determine_classification(ai_json, settings.CONFIDENCE_THRESHOLD)
+        bucket = determine_classification(ai_json, target_threshold)
         
         return AIClassification(
             important=ai_json.get("important", True),

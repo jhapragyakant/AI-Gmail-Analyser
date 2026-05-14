@@ -480,7 +480,7 @@ const app = {
         }
     },
 
-    renderSettings(container) {
+    async renderSettings(container) {
         container.innerHTML = `
             <div class="card">
                 <h3>Settings</h3>
@@ -492,29 +492,84 @@ const app = {
                         <div style="display: flex; align-items: center; gap: 1rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px;">
                             <div class="avatar" style="width: 48px; height: 48px;"></div>
                             <div>
-                                <div style="font-weight: 600;" id="settings-user-name">User</div>
+                                <div style="font-weight: 600;" id="settings-user-name">${this.user.name || 'User'}</div>
                                 <div style="font-size: 0.85rem; color: var(--text-secondary);">Connected via Google</div>
                             </div>
-                            <button class="btn btn-outline" style="margin-left: auto;">Change</button>
                         </div>
                     </div>
                     
                     <div>
                         <h4 style="margin-bottom: 1rem;">AI Model</h4>
                         <div class="form-group">
-                            <select class="btn btn-outline" style="width: 100%; text-align: left; padding: 0.8rem;">
-                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest)</option>
-                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Most Accurate)</option>
+                            <select id="setting-ai-model" class="btn btn-outline" style="width: 100%; text-align: left; padding: 0.8rem;">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Balanced - Recommended)</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Most Accurate)</option>
+                                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview (Next-Gen)</option>
                             </select>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                Gemini 2.5 is the current stable generation. Gemini 3.1 is the latest preview model.
+                            </p>
                         </div>
                     </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">Confidence Threshold</h4>
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.9rem;">Current: <span id="threshold-val">85</span>%</span>
+                            </div>
+                            <input type="range" id="setting-threshold" min="50" max="99" value="85" style="width: 100%;">
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                Higher threshold means the AI will mark fewer emails as Unimportant unless it is very sure.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <button id="save-settings-btn" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i data-lucide="save"></i> Save Settings
+                    </button>
                 </div>
             </div>
         `;
-        
-        if (this.user) {
-            document.getElementById('settings-user-name').textContent = this.user.name || 'User';
+
+        try {
+            const currentSettings = await api.getSettings();
+            document.getElementById('setting-ai-model').value = currentSettings.ai_model_name;
+            document.getElementById('setting-threshold').value = currentSettings.confidence_threshold;
+            document.getElementById('threshold-val').textContent = currentSettings.confidence_threshold;
+        } catch (err) {
+            console.error('Failed to load settings', err);
         }
+
+        // Bind events
+        const thresholdInput = document.getElementById('setting-threshold');
+        thresholdInput.addEventListener('input', (e) => {
+            document.getElementById('threshold-val').textContent = e.target.value;
+        });
+
+        const saveBtn = document.getElementById('save-settings-btn');
+        saveBtn.addEventListener('click', async () => {
+            const model = document.getElementById('setting-ai-model').value;
+            const threshold = parseInt(document.getElementById('setting-threshold').value);
+            
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = 'Saving...';
+                await api.updateSettings({
+                    ai_model_name: model,
+                    confidence_threshold: threshold
+                });
+                ui.showToast('Settings saved successfully', 'success');
+            } catch (err) {
+                ui.showToast('Failed to save settings: ' + err.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="save"></i> Save Settings';
+                lucide.createIcons();
+            }
+        });
+        
+        lucide.createIcons();
     },
 
     handleRouting() {

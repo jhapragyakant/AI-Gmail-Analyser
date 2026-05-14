@@ -66,4 +66,5 @@ class SettingsResponse(BaseModel):
     ai_model_name: str
 
 class SettingsUpdateRequest(BaseModel):
-    confidence_threshold: int
+    confidence_threshold: Optional[int] = None
+    ai_model_name: Optional[str] = None

@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 
 from .database import engine, Base
 from . import models
-from .routers import auth, emails, history
+from .routers import auth, emails, history, settings
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(emails.router)
 app.include_router(history.router)
+app.include_router(settings.router)
 
 # Serve Frontend
 
