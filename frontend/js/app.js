@@ -4,6 +4,7 @@
 const app = {
     currentView: 'dashboard',
     user: null,
+    currentScanId: null,
 
     init() {
         console.log('Initializing AI Gmail Analyser...');
@@ -252,6 +253,7 @@ const app = {
         
         if (progressContainer) progressContainer.style.display = 'none';
         resultsContainer.style.display = 'block';
+        this.currentScanId = results.scan_id;
         
         const totalUnimportant = results.unimportant.length;
         const untrashedUnimportant = results.unimportant.filter(e => e.final_action !== 'trashed').length;
@@ -276,6 +278,9 @@ const app = {
 
         resultsContainer.innerHTML = `
             <div class="fade-in">
+                <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <h3 style="margin: 0;">Scan Result #${results.scan_number}</h3>
+                </div>
                 <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
                     <div class="card" style="flex: 1; text-align: center; border-bottom: 4px solid var(--success);">
                         <div style="font-size: 2rem; font-weight: 700;">${results.important.length}</div>
@@ -338,7 +343,7 @@ const app = {
                     </button>
                     ${email.final_action === 'trashed' 
                         ? `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 4px;">Deleted</span>`
-                        : `<button class="btn btn-outline btn-sm" style="padding: 0.4rem;" title="Mark as Unimportant" onclick="app.handleOverride(${email.id}, 'unimportant')">
+                        : `<button class="btn btn-outline btn-sm" style="padding: 0.4rem;" title="Trash Email" onclick="app.handleTrash(${email.id})">
                                <i data-lucide="trash" style="width: 16px; height: 16px;"></i>
                            </button>`
                     }
@@ -357,10 +362,27 @@ const app = {
         try {
             await api.patch(`/emails/${logId}/override`, { classification });
             ui.showToast(`Marked as ${classification}`, 'success');
-            // Re-fetch scan results to update UI
-            if (this.currentView === 'scan') {
-                // In a real app we'd just update the local state
-                ui.showToast('UI update pending...', 'info');
+            
+            if (this.currentScanId) {
+                const results = await api.getScanResults(this.currentScanId);
+                this.showScanResults(results);
+            }
+        } catch (err) {
+            ui.showToast(err.message, 'error');
+        }
+    },
+
+    async handleTrash(logId) {
+        if (!confirm('Trash this email in Gmail?')) return;
+        
+        try {
+            ui.showToast('Trashing email...', 'info');
+            await api.trashEmail(logId);
+            ui.showToast('Email trashed', 'success');
+            
+            if (this.currentScanId) {
+                const results = await api.getScanResults(this.currentScanId);
+                this.showScanResults(results);
             }
         } catch (err) {
             ui.showToast(err.message, 'error');
@@ -412,7 +434,7 @@ const app = {
                             <div>
                                 <div style="font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
                                     <i data-lucide="hash" style="width: 14px; height: 14px; color: var(--primary-color);"></i>
-                                    Scan #${item.id}
+                                    Scan #${item.scan_number}
                                 </div>
                                 <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
                                     <i data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle;"></i> ${date}

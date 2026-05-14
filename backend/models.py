@@ -23,6 +23,7 @@ class ScanHistory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    scan_number = Column(Integer, default=1)
     total_emails = Column(Integer, default=0)
     important_count = Column(Integer, default=0)
     needs_review_count = Column(Integer, default=0)

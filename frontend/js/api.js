@@ -101,5 +101,9 @@ const api = {
     // History
     async getHistory() {
         return this.get('/history');
+    },
+
+    async trashEmail(logId) {
+        return this.post(`/emails/${logId}/trash`);
     }
 };

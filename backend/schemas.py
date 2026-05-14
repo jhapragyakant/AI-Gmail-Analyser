@@ -37,6 +37,7 @@ class EmailLogResponse(EmailLogBase):
 
 class ScanResultsResponse(BaseModel):
     scan_id: int
+    scan_number: int
     important: List[EmailLogResponse]
     needs_review: List[EmailLogResponse]
     unimportant: List[EmailLogResponse]
@@ -46,6 +47,7 @@ class OverrideRequest(BaseModel):
 
 # --- History ---
 class ScanHistoryBase(BaseModel):
+    scan_number: int
     total_emails: int
     important_count: int
     needs_review_count: int

@@ -46,8 +46,13 @@ def scan_emails(db: Session = Depends(get_db), user_email: Optional[str] = Cooki
     if not raw_emails:
         return {"scan_id": None, "message": "No unread emails found."}
 
+    # Find the last scan number for this user to increment it
+    last_scan = db.query(ScanHistory).filter(ScanHistory.user_id == user.id).order_by(ScanHistory.scan_number.desc()).first()
+    next_scan_number = (last_scan.scan_number + 1) if last_scan else 1
+
     scan_record = ScanHistory(
         user_id=user.id,
+        scan_number=next_scan_number,
         total_emails=len(raw_emails)
     )
     db.add(scan_record)
@@ -110,6 +115,7 @@ def get_scan_results(scan_id: int, db: Session = Depends(get_db)):
 
     return ScanResultsResponse(
         scan_id=scan_id,
+        scan_number=scan_record.scan_number,
         important=important,
         needs_review=needs_review,
         unimportant=unimportant
@@ -172,4 +178,27 @@ def cleanup_emails(request: CleanupRequest, db: Session = Depends(get_db), user_
     
     return {"message": f"Cleaned up {deleted_count} emails.", "deleted_count": deleted_count}
 
-
+@router.post("/{log_id}/trash")
+def trash_single_email(log_id: int, db: Session = Depends(get_db), user_email: Optional[str] = Cookie(None)):
+    creds_dict, user = get_current_user_creds(user_email, db)
+    
+    log = db.query(EmailLog).filter(EmailLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Email log not found")
+        
+    # Verify the scan belongs to the user
+    scan = db.query(ScanHistory).filter(ScanHistory.id == log.scan_id, ScanHistory.user_id == user.id).first()
+    if not scan:
+        raise HTTPException(status_code=403, detail="Access denied")
+        
+    if log.final_action == "trashed":
+        return {"message": "Email already trashed"}
+        
+    success = trash_email(creds_dict, log.gmail_msg_id)
+    if success:
+        log.final_action = "trashed"
+        scan.deleted_count += 1
+        db.commit()
+        return {"message": "Email trashed successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to trash email in Gmail")
